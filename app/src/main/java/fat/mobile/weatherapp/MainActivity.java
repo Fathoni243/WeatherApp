@@ -5,6 +5,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -21,7 +22,10 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import fat.mobile.weatherapp.Retrofit.ApiService;
 import fat.mobile.weatherapp.databinding.ActivityMainBinding;
+import retrofit2.Call;
+import retrofit2.Callback;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -45,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.requestQueue = Volley.newRequestQueue(this);
 
         binding.btnVolley.setOnClickListener(this);
+        binding.btnRetrofit.setOnClickListener(this);
     }
 
     @Override
@@ -61,10 +66,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 this.requestQueue.add(jr);
                 break;
             case R.id.btnRetrofit:
-                Retrofit retrofit = new Retrofit.Builder()
-                        .baseUrl(JSON_URL)
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build();
+                getDataFromApi();
                 break;
         }
     }
@@ -107,6 +109,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void getDataFromApi() {
+        ApiService.endpoint().getData().enqueue(new Callback<WeatherModelRetrofit>() {
+            @Override
+            public void onResponse(Call<WeatherModelRetrofit> call, retrofit2.Response<WeatherModelRetrofit> response) {
+                if (response.isSuccessful()){
+                    WeatherModelRetrofit data = response.body();
+                    binding.txtLonglatCrn.setText(String.valueOf(data.getLatitude()) + ","+String.valueOf(data.getLongitude()));
+                    binding.txtWsCr.setText("Windspeed : " + String.valueOf(data.getCurrent_weather().getWindspeed()));
+                    binding.txtTemperatureCrn.setText(String.valueOf(data.getCurrent_weather().getTemperature()));
+                    binding.txtKondisiCrn.setText(CodeWeather(data.getCurrent_weather().getWeathercode()));
+
+                    binding.recyclerView.setHasFixedSize(true);
+
+                    for (int i = 1; i < data.getDaily().getTime().size(); i++) {
+                        String codeWeather = CodeWeather(data.getDaily().getWeathercode().get(i));
+                        int imgcode = CodeWeatherImage(data.getDaily().getWeathercode().get(i));
+                        arrayListWeather.add(new WeatherModel(codeWeather, data.getDaily().getTime().get(i), imgcode));
+                    }
+
+                    weatherAdapter = new WeatherAdapter(arrayListWeather);
+                    RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
+                    binding.recyclerView.setLayoutManager(layoutManager);
+                    binding.recyclerView.setAdapter(weatherAdapter);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<WeatherModelRetrofit> call, Throwable t) {
+                Log.d("MainActivity", t.toString());
+            }
+        });
     }
 
     public int CodeWeatherImage(int code) {
