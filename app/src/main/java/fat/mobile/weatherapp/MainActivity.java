@@ -119,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     WeatherModelRetrofit data = response.body();
                     binding.txtLonglatCrn.setText(String.valueOf(data.getLatitude()) + ","+String.valueOf(data.getLongitude()));
                     binding.txtWsCr.setText("Windspeed : " + String.valueOf(data.getCurrent_weather().getWindspeed()));
-                    binding.txtTemperatureCrn.setText(String.valueOf(data.getCurrent_weather().getTemperature()));
+                    binding.txtTemperatureCrn.setText(String.valueOf(data.getCurrent_weather().getTemperature()) + "°");
                     binding.txtKondisiCrn.setText(CodeWeather(data.getCurrent_weather().getWeathercode()));
 
                     binding.recyclerView.setHasFixedSize(true);
